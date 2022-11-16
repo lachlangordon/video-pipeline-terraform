@@ -2,16 +2,11 @@ variable "get_signed_url_lambda_function_name" {
   default = "get-signed-url-lambda"
 }
 
-data "archive_file" "get_signed_url_lambda_src" {
-  type             = "zip"
-  source_file      = "${path.module}/src/getSignedUrl.js"
-  output_file_mode = "0666"
-  output_path      = "${path.module}/src/${var.get_signed_url_lambda_function_name}.zip"
-}
-
 resource "aws_lambda_function" "get_signed_url_lambda" {
   runtime       = "nodejs16.x"
-  filename      = data.archive_file.get_signed_url_lambda_src.output_path
+  s3_bucket = aws_s3_bucket.code.id
+  s3_key = aws_s3_bucket_object.get_signed_url_code.key
+  source_code_hash = data.archive_file.get_signed_url_lambda_src.output_base64sha256
   function_name = var.get_signed_url_lambda_function_name
   handler       = "getSignedUrl.handler"
   role          = aws_iam_role.get_signed_url_lambda_role.arn
@@ -42,7 +37,7 @@ data "aws_iam_policy_document" "get_signed_url_lambda_role_policy_document" {
 }
 
 resource "aws_iam_role" "get_signed_url_lambda_role" {
-  name               = "${var.get_signed_url_lambda_function_name}-role"
+  name = "${var.get_signed_url_lambda_function_name}-role"
   assume_role_policy = data.aws_iam_policy_document.get_signed_url_lambda_role_policy_document.json
 }
 

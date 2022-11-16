@@ -2,16 +2,11 @@ variable "delete_lambda_function_name" {
   default = "delete-lambda"
 }
 
-data "archive_file" "delete_lambda_src" {
-  type             = "zip"
-  source_file      = "${path.module}/src/delete.js"
-  output_file_mode = "0666"
-  output_path      = "${path.module}/src/${var.delete_lambda_function_name}.zip"
-}
-
 resource "aws_lambda_function" "delete_lambda" {
   runtime       = "nodejs16.x"
-  filename      = data.archive_file.delete_lambda_src.output_path
+  s3_bucket = aws_s3_bucket.code.id
+  s3_key = aws_s3_bucket_object.delete_code.key
+  source_code_hash = data.archive_file.delete_lambda_src.output_base64sha256
   function_name = var.delete_lambda_function_name
   handler       = "delete.handler"
   role          = aws_iam_role.delete_lambda_role.arn

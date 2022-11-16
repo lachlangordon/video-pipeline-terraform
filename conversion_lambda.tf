@@ -7,16 +7,11 @@ variable "conversion_lambda_function_name" {
 
 //Define lambda function and code
 
-data "archive_file" "conversion_lambda_src" {
-  type             = "zip"
-  source_file      = "${path.module}/src/conversion.js"
-  output_file_mode = "0666"
-  output_path      = "${path.module}/src/${var.conversion_lambda_function_name}.zip"
-}
-
 resource "aws_lambda_function" "conversion_lambda" {
   runtime       = "nodejs16.x"
-  filename      = data.archive_file.conversion_lambda_src.output_path
+  s3_bucket = aws_s3_bucket.code.id
+  s3_key = aws_s3_bucket_object.conversion_code.key
+  source_code_hash = data.archive_file.conversion_lambda_src.output_base64sha256
   function_name = var.conversion_lambda_function_name
   handler       = "conversion.handler"
   role          = aws_iam_role.conversion_lambda_role.arn
